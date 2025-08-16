@@ -1,31 +1,27 @@
-# (permite acessar pastas,arquivos,variaveis de ambiente)
-import os                      
-# (para copiar, mover, apagar arquivos e pastas) mais avançada que a os
-import shutil                  
-# (executa comandos externos no terminal pelo python)ex: rodar outro app
-import subprocess              
-# (Criar arquivos e pastas temporarias)
-import tempfile                
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QFrame     #Componentes visuais, como botões,janelas,caixa de texto,layouts...
-from PyQt5.QtGui import QPalette, QColor, QFont    #Parte grafica, como cores, fontes e paletas de cores
-from PyQt5.QtCore import Qt, QSize    #funções Basicas e não visuais, como tamanhos, alinhamentos e constantes
+import os
+import shutil
+import subprocess
+import tempfile
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QGroupBox, QGridLayout
+from PyQt5.QtGui import QPalette, QColor, QFont
+from PyQt5.QtCore import Qt, QSize
 
-
-#Classe principal que herda de QWidget, que é a janela principal do app
-class otimizadorPC(QWidget):  
+class OtimizadorPC(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("🛠️ Otimizador Aoxy")
-        self.setGeometry(100, 100, 550, 550)
-        self.setFixedSize(550, 550)
+        self.setGeometry(200, 100, 800, 550)
+        self.setFixedSize(800, 550)
         self.setAutoFillBackground(True)
+
+        # Paleta de cores
         palette = QPalette()
         palette.setColor(QPalette.Window, QColor(30, 30, 30))
         palette.setColor(QPalette.WindowText, Qt.white)
         self.setPalette(palette)
-         
-         #Define o estilo do app, como cores, fontes e tamanhos dos botões
-        self.setStyleSheet("""    
+
+        # Estilo geral
+        self.setStyleSheet("""
             QWidget {
                 background-color: #1e1e1e;
                 color: #f0f0f0;
@@ -39,7 +35,7 @@ class otimizadorPC(QWidget):
                 border-radius: 14px;
                 font-size: 15px;
                 font-weight: bold;
-                margin-bottom: 10px;
+                margin: 5px;
                 text-align: left;
             }
             QPushButton:hover {
@@ -54,69 +50,114 @@ class otimizadorPC(QWidget):
                 font-size: 13px;
                 color: #cccccc;
             }
-            QFrame {
-                color: #444444;
+            QGroupBox {
+                font-weight: bold;
+                color: #ffffff;
             }
         """)
 
-        # Cria um layout vertical para organizar os componentes
-        layout = QVBoxLayout()          
-        layout.setContentsMargins(30, 20, 30, 20)
+        # Layout principal vertical
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(15)
+
+        # Título
         self.label_titulo = QLabel("🧰 Otimizador de PC")
         self.label_titulo.setObjectName("titulo")
         self.label_titulo.setFont(QFont("Segoe UI", 18, QFont.Bold))
         self.label_titulo.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.label_titulo)
-        layout.addSpacing(10)
+        main_layout.addWidget(self.label_titulo)
 
-        botoes_layout = QVBoxLayout()
-        botoes_layout.setSpacing(12)
+        # Grupos de botões
+        self.box_limpeza = self.criar_grupo("🧹 Limpeza", [
+            "🧹 Limpar Temporários",
+            "🗑️ Esvaziar Lixeira",
+            "🧹 Limpar cache do Windows Update",
+            "🧹 Limpar Prefetch",
+            "📦 Limpar Pontos de Restauração"
+        ])
 
-        # Cria os botões com suas respectivas funções
+        self.box_desempenho = self.criar_grupo("🚀 Desempenho", [
+            "🔄 Ativar Modo Desempenho (efeitos off)",
+            "🧯 Desativar Serviços Desnecessários",
+            "🚫 Mostrar Programas de Inicialização",
+            "🎭 Desativar Efeitos de Transparência",
+            "🚀 Ativar Plano Alto Desempenho",
+            "🎭 Desativar Animações Extras",
+            "💨 Liberar RAM"
+        ])
+
+        self.box_avancado = self.criar_grupo("⚙️ Avançado", [
+            "🛠️ Otimizar Inicialização",
+            "🔍 Verificar Integridade do Sistema (sfc)",
+            "💾 Desfragmentar Disco"
+        ])
+
+        # Layout horizontal para grupos
+        grupos_layout = QHBoxLayout()
+        grupos_layout.addWidget(self.box_limpeza)
+        grupos_layout.addWidget(self.box_desempenho)
+        grupos_layout.addWidget(self.box_avancado)
+        main_layout.addLayout(grupos_layout)
+
+        # Separador
+        separador = QFrame()
+        separador.setFrameShape(QFrame.HLine)
+        separador.setStyleSheet("color: #444444;")
+        main_layout.addWidget(separador)
+
+        # Status
+        self.status_label = QLabel("✅ Pronto para otimizar!")
+        self.status_label.setObjectName("status")
+        self.status_label.setAlignment(Qt.AlignCenter)
+        main_layout.addWidget(self.status_label)
+
+        self.setLayout(main_layout)
+
+        # Conectar funções
         self.botoes = {
             "🧹 Limpar Temporários": self.limpar_temporarios,
             "🗑️ Esvaziar Lixeira": self.esvaziar_lixeira,
+            "🧹 Limpar cache do Windows Update": self.limpar_cache_windows_update,
+            "🧹 Limpar Prefetch": self.limpar_prefetch,
+            "📦 Limpar Pontos de Restauração": self.limpar_pontos_restauracao,
             "🔄 Ativar Modo Desempenho (efeitos off)": self.desativar_efeitos_visuais,
             "🧯 Desativar Serviços Desnecessários": self.desativar_servicos,
             "🚫 Mostrar Programas de Inicialização": self.mostrar_programas_inicio,
             "🎭 Desativar Efeitos de Transparência": self.desativar_transparencia,
-            "Plano de Energia: Alto Desempenho": self.ativar_plano_alto_desempenho,
-            "Verificar Integridade do Sistema (sfc)": self.verificar_integridade_sistema,
-            "Desfragmentar Disco": self.desfragmentar_disco,
-            "Otimizar Inicialização": self.otimizar_inicializacao,
-            "Limpar cache do Windows Update": self.limpar_cache_windows_update,
-            "Desativar Serviços Inúteis": self.desativar_servicos_inuteis,
-            "Desativar Animações Extras": self.desativar_animacoes_extra,
-            "Liberar RAM": self.liberar_ram,
-            "Limpar Prefetch": self.limpar_prefetch,
-            "Limpar Pontos de Restauração": self.limpar_pontos_restauracao,
+            "🚀 Ativar Plano Alto Desempenho": self.ativar_plano_alto_desempenho,
+            "🎭 Desativar Animações Extras": self.desativar_animacoes_extra,
+            "💨 Liberar RAM": self.liberar_ram,
+            "🛠️ Otimizar Inicialização": self.otimizar_inicializacao,
+            "🔍 Verificar Integridade do Sistema (sfc)": self.verificar_integridade_sistema,
+            "💾 Desfragmentar Disco": self.desfragmentar_disco
         }
-        # Cria os botões dinamicamente e conecta cada um à sua função
-        for texto, func in self.botoes.items():
+        self.conectar_botoes()
+
+    def criar_grupo(self, titulo, botoes_lista):
+        grupo = QGroupBox(titulo)
+        layout = QGridLayout()
+        grupo.setLayout(layout)
+        grupo.botoes = {}
+        for i, texto in enumerate(botoes_lista):
             botao = QPushButton(texto)
             botao.setIconSize(QSize(24, 24))
-            botao.clicked.connect(func)
-            botoes_layout.addWidget(botao)
-        
-        layout.addLayout(botoes_layout)
-    
-        separador = QFrame()
-        separador.setFrameShape(QFrame.HLine)
-        layout.addWidget(separador)
-        
-        #status,mostra como esta o processo ou resultado
-        self.status_label = QLabel("✅ Pronto para otimizar!")
-        self.status_label.setObjectName("status")
-        self.status_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.status_label)
+            layout.addWidget(botao, i // 2, i % 2)
+            grupo.botoes[texto] = botao
+        return grupo
 
-        self.setLayout(layout)
+    def conectar_botoes(self):
+        for texto, func in self.botoes.items():
+            for grupo in [self.box_limpeza, self.box_desempenho, self.box_avancado]:
+                if texto in grupo.botoes:
+                    grupo.botoes[texto].clicked.connect(func)
+
+    # ---------------- Funções reais ----------------
 
     def limpar_temporarios(self):
         self.status_label.setText("🧹 Limpando arquivos temporários...")
         pastas_temp = [tempfile.gettempdir(), os.path.expandvars(r"%SystemRoot%\Temp")]
         arquivos_apagados = 0
-
         for pasta in pastas_temp:
             if os.path.exists(pasta):
                 try:
@@ -133,7 +174,6 @@ class otimizadorPC(QWidget):
                             pass
                 except:
                     pass
-
         self.status_label.setText(f"✅ {arquivos_apagados} arquivos temporários apagados!")
 
     def esvaziar_lixeira(self):
@@ -154,7 +194,6 @@ class otimizadorPC(QWidget):
         except:
             self.status_label.setText("⚠️ Não foi possível aplicar essa otimização.")
 
-
     def desativar_servicos(self):
         self.status_label.setText("Função de desativar serviços ainda não implementada.")
 
@@ -170,7 +209,7 @@ class otimizadorPC(QWidget):
     def verificar_integridade_sistema(self):
         self.status_label.setText("Função de verificar integridade do sistema ainda não implementada.")      
 
-    def desfragmentar_disco (self):
+    def desfragmentar_disco(self):
         self.status_label.setText("Função de desfragmentar disco ainda não implementada.")
 
     def otimizar_inicializacao(self):
@@ -178,9 +217,6 @@ class otimizadorPC(QWidget):
 
     def limpar_cache_windows_update(self):
         self.status_label.setText("Função de limpar cache do Windows Update ainda não implementada.")       
-
-    def desativar_servicos_inuteis(self):
-        self.status_label.setText("Função de desativar serviços inúteis ainda não implementada.")   
 
     def desativar_animacoes_extra(self):
         self.status_label.setText("Função de desativar animações extras ainda não implementada.")  
@@ -191,17 +227,11 @@ class otimizadorPC(QWidget):
     def limpar_prefetch(self):
         self.status_label.setText("Função de limpar Prefetch ainda não implementada.")
 
-
-        
     def limpar_pontos_restauracao(self):
-        try:
-            subprocess.run('powershell.exe -Command "Checkpoint-Computer -Description \'Ponto de Restauração Manual\' -RestorePointType \'MODIFY_SETTINGS\'"', shell=True)
-            self.status_label.setText("Ponto de restauração criado com sucesso!")
-        except:
-            self.status_label.setText("Não foi possível criar o ponto de restauração.")
+        self.status_label.setText("Função de limpar pontos de restauração ainda não implementada.")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication([])
-    janela = otimizadorPC()
+    janela = OtimizadorPC()
     janela.show()
     app.exec_()
